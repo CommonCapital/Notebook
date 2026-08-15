@@ -1,0 +1,26 @@
+html {
+  height: 100%;
+}
+
+html,
+body {
+  height: 100%;
+  max-width: 100vw;
+  overflow: hidden;
+  background: #0f1114;
+  color: #e6e6e6;
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}

@@ -1,0 +1,119 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #1b1d22;
+  border-bottom: 1px solid #2c2f36;
+  flex-wrap: wrap;
+}
+
+.group {
+  display: flex;
+  gap: 4px;
+}
+
+.tool {
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #2c2f36;
+  background: #24262c;
+  color: #e6e6e6;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.tool:hover { background: #2f323a; }
+.tool:disabled { opacity: 0.35; cursor: not-allowed; }
+.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #9aa0aa;
+}
+.field input[type="color"] {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #2c2f36;
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+.field input[type="range"] { width: 90px; }
+.num { width: 18px; text-align: right; color: #e6e6e6; }
+
+.mini {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  border: 1px solid #2c2f36;
+  background: #24262c;
+  color: #9aa0aa;
+  cursor: pointer;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #2c2f36;
+  background: #24262c;
+  color: #e6e6e6;
+  cursor: pointer;
+}
+.action:hover { background: #2f323a; }
+.action:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.exportWrap { position: relative; }
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #1b1d22;
+  border: 1px solid #2c2f36;
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 180px;
+  z-index: 50;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.menuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  border: none;
+  background: none;
+  color: #e6e6e6;
+  cursor: pointer;
+}
+.menuItem:hover { background: #2f323a; }
+
+.sep {
+  width: 1px;
+  align-self: stretch;
+  background: #2c2f36;
+  margin: 0 2px;
+}
+
+.spacer { flex: 1; }
+
+.save { font-size: 12px; min-width: 70px; text-align: right; }
+.saving { color: #eab308; }
+.saved { color: #22c55e; }
+.error { color: #ef4444; }
+.idle { color: transparent; }
