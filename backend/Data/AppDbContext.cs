@@ -1,7 +1,7 @@
-using DrawingDesk.Api.Models;
+using Notebook.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace DrawingDesk.Api.Data;
+namespace Notebook.Api.Data;
 
 public class AppDbContext : DbContext
 {

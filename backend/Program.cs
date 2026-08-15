@@ -1,4 +1,4 @@
-using DrawingDesk.Api.Data;
+using Notebook.Api.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // SQLite: one file next to the app. Connection string lives in appsettings.json.
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("Default")
-                      ?? "Data Source=drawingdesk.db"));
+                      ?? "Data Source=notebook.db"));
 
 builder.Services.AddControllers()
     // Serialize enums as strings and keep camelCase (default) for the JS client.

@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace DrawingDesk.Api.Dtos;
+namespace Notebook.Api.Dtos;
 
 /// <summary>Lightweight file summary for the file-browser list (no scene payload).</summary>
 public record FileSummaryDto(

@@ -136,7 +136,7 @@ export default function Sidebar(p: Props) {
   return (
     <aside className={styles.sidebar}>
       <div className={styles.header}>
-        <span className={styles.brand}>🎨 Drawing Desk</span>
+        <span className={styles.brand}>Notebook</span>
       </div>
       <div className={styles.actions}>
         <button className={styles.new} onClick={() => p.onCreateFile(null)}>+ File</button>

@@ -1,10 +1,10 @@
-using DrawingDesk.Api.Data;
-using DrawingDesk.Api.Dtos;
-using DrawingDesk.Api.Models;
+using Notebook.Api.Data;
+using Notebook.Api.Dtos;
+using Notebook.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace DrawingDesk.Api.Controllers;
+namespace Notebook.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

@@ -1,0 +1,84 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal {
+  width: 560px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  color: var(--fg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+}
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.tabs { display: flex; gap: 4px; }
+.tab, .tabActive {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-dim);
+  cursor: pointer;
+}
+.tabActive { background: var(--accent-weak); border-color: rgba(185, 138, 70, 0.4); color: var(--accent-hi); }
+.close { border: none; background: none; color: var(--fg-dim); font-size: 22px; cursor: pointer; }
+.close:hover { color: var(--fg); }
+
+.body { padding: 14px; overflow-y: auto; }
+.cat {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  margin: 8px 0 6px;
+}
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 6px; }
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: #fbfaf7;
+  cursor: pointer;
+}
+.cell:hover { border-color: var(--accent); }
+.cell img { width: 46px; height: 46px; object-fit: contain; }
+.cell span { font-size: 10px; color: #555; }
+
+.templates { display: flex; flex-direction: column; gap: 8px; }
+.template {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  background: var(--panel-hi);
+  color: var(--fg);
+  cursor: pointer;
+  text-align: left;
+}
+.template:hover { border-color: var(--accent); }
+.tName { font-size: 14px; font-weight: 600; }
+.tDesc { font-size: 12px; color: var(--fg-dim); }

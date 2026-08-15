@@ -13,9 +13,11 @@ interface Props {
 }
 
 const TYPES: { id: ChartType; label: string }[] = [
-  { id: "bar", label: "▮ Bar" },
-  { id: "line", label: "📈 Line" },
-  { id: "pie", label: "◕ Pie" },
+  { id: "bar", label: "Bar" },
+  { id: "line", label: "Line" },
+  { id: "area", label: "Area" },
+  { id: "scatter", label: "Scatter" },
+  { id: "pie", label: "Pie" },
 ];
 
 export default function ChartModal({ initial, onSave, onCancel }: Props) {

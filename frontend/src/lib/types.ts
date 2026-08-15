@@ -14,7 +14,8 @@ export type ElementType =
   | "image"
   | "math"     // LaTeX formula, rendered to SVG
   | "table"    // structured grid, rendered to SVG
-  | "chart";   // bar/line/pie, rendered to SVG
+  | "chart"    // bar/line/pie/scatter/area, rendered to SVG
+  | "graph";   // function plot (Desmos-style), rendered to SVG
 
 export interface BaseElement {
   id: string;
@@ -119,7 +120,7 @@ export interface TableElement extends BaseElement {
   headerFill: string;
 }
 
-export type ChartType = "bar" | "line" | "pie";
+export type ChartType = "bar" | "line" | "pie" | "scatter" | "area";
 
 export interface ChartElement extends BaseElement {
   type: "chart";
@@ -130,6 +131,24 @@ export interface ChartElement extends BaseElement {
   chartType: ChartType;
   title: string;
   data: { label: string; value: number }[];
+}
+
+export interface GraphFunc {
+  expr: string;
+  color: string;
+}
+
+export interface GraphElement extends BaseElement {
+  type: "graph";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  funcs: GraphFunc[];
+  xMin: number;
+  xMax: number;
+  yMin: number;
+  yMax: number;
 }
 
 export type SceneElement =
@@ -143,10 +162,15 @@ export type SceneElement =
   | ImageElement
   | MathElement
   | TableElement
-  | ChartElement;
+  | ChartElement
+  | GraphElement;
+
+// Paper style behind the drawing — blank, or ruled/gridded like a notebook.
+export type BackgroundStyle = "blank" | "grid" | "lines" | "dots";
 
 export interface Scene {
   elements: SceneElement[];
+  backgroundStyle?: BackgroundStyle;
 }
 
 // ---- API shapes ----

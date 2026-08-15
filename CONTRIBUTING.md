@@ -1,6 +1,6 @@
-# Contributing to Drawing Desk
+# Contributing to Notebook
 
-**Drawing Desk is Figma for engineers and STEM students.** One canvas where a CS
+**Notebook is an engineer's canvas for STEM.** One canvas where a CS
 student diagrams a distributed system, a mechanical engineer draws a blueprint, a
 physicist writes a nuclear reaction, a chemist sketches a benzene ring, and a math
 student plots a function — all synced, all exportable.

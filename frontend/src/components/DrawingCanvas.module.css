@@ -1,0 +1,35 @@
+.wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.zoom {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  align-items: stretch;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.zoom button {
+  border: none;
+  background: var(--panel);
+  color: var(--fg-dim);
+  font-size: 14px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-family: var(--mono);
+}
+.zoom button:hover { background: var(--panel-hi); color: var(--fg); }
+.zoomPct {
+  min-width: 52px;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}

@@ -26,7 +26,7 @@ export function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
-// Read a File as text (for importing a .drawdesk / .json scene).
+// Read a File as text (for importing a .notebook / .json scene).
 export function readFileAsText(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

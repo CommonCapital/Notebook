@@ -18,10 +18,11 @@ export function svgToDataUrl(svg: string): string {
 
 const FONT = "system-ui, -apple-system, 'Segoe UI', Arial, sans-serif";
 
-// Distinct, colorblind-friendly-ish categorical palette.
+// Muted, print-friendly categorical palette (engineering/figure tones, not the
+// usual saturated dashboard colours).
 const PALETTE = [
-  "#3b82f6", "#ef4444", "#22c55e", "#eab308", "#a855f7",
-  "#06b6d4", "#f97316", "#ec4899", "#14b8a6", "#8b5cf6",
+  "#3d5a80", "#b5654d", "#6b8f71", "#b98a46", "#7d6b8f",
+  "#5a8a8c", "#a8574a", "#8a7d5a", "#4f7a6a", "#9a6b6b",
 ];
 
 export function tableToSvg(el: TableElement): string {
@@ -157,16 +158,23 @@ export function chartToSvg(el: ChartElement): string {
       );
     });
   } else {
-    // line
+    // line / area / scatter — all plot value against index
     const pts = data.map((d, i) => {
       const px = x0 + i * slot + slot / 2;
       const py = y0 - (Math.max(0, d.value) / max) * plotH;
       return [px, py] as const;
     });
     const poly = pts.map(([px, py]) => `${px.toFixed(1)},${py.toFixed(1)}`).join(" ");
-    parts.push(`<polyline points="${poly}" fill="none" stroke="${PALETTE[0]}" stroke-width="2"/>`);
+    if (chartType === "area") {
+      const first = pts[0], last = pts[pts.length - 1];
+      parts.push(`<path d="M${first[0].toFixed(1)},${y0} L${poly.split(" ").join(" L")} L${last[0].toFixed(1)},${y0} Z" fill="${PALETTE[0]}" fill-opacity="0.25"/>`);
+    }
+    if (chartType === "line" || chartType === "area") {
+      parts.push(`<polyline points="${poly}" fill="none" stroke="${PALETTE[0]}" stroke-width="2"/>`);
+    }
     pts.forEach(([px, py], i) => {
-      parts.push(`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3" fill="${PALETTE[0]}"/>`);
+      const r = chartType === "scatter" ? 4 : 3;
+      parts.push(`<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${r}" fill="${PALETTE[chartType === "scatter" ? i % PALETTE.length : 0]}"/>`);
       parts.push(
         `<text x="${px.toFixed(1)}" y="${y0 + 14}" text-anchor="middle" font-family="${FONT}" font-size="10" fill="#555">${esc(data[i].label)}</text>`,
       );

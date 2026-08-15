@@ -1,7 +1,7 @@
 .backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.62);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,82 +13,71 @@
   max-width: calc(100vw - 32px);
   max-height: calc(100vh - 48px);
   overflow-y: auto;
-  background: #1b1d22;
-  border: 1px solid #2c2f36;
-  border-radius: 14px;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
   padding: 18px;
-  color: #e6e6e6;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  color: var(--fg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
 }
 
 .head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   margin-bottom: 14px;
 }
-.close {
-  border: none;
-  background: none;
-  color: #9aa0aa;
-  font-size: 22px;
-  cursor: pointer;
-  line-height: 1;
-}
-.close:hover { color: #e6e6e6; }
+.close { border: none; background: none; color: var(--fg-dim); font-size: 22px; cursor: pointer; line-height: 1; }
+.close:hover { color: var(--fg); }
 
 .previewBox {
   min-height: 84px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  border-radius: 10px;
+  background: #fbfaf7;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
   padding: 14px;
   margin-bottom: 12px;
 }
 .previewImg { max-width: 100%; max-height: 200px; }
-.hint { color: #9aa0aa; font-size: 13px; }
-.err { color: #ef4444; font-size: 13px; }
+.hint { color: var(--fg-faint); font-size: 13px; }
+.err { color: var(--danger); font-size: 13px; }
 
 .input {
   width: 100%;
   min-height: 72px;
   resize: vertical;
-  background: #101216;
-  border: 1px solid #2c2f36;
-  border-radius: 8px;
-  color: #e6e6e6;
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  background: var(--ink);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  color: var(--fg);
+  font-family: var(--mono);
   font-size: 14px;
   padding: 10px 12px;
   margin-bottom: 12px;
 }
-.input:focus { outline: none; border-color: #3b82f6; }
+.input:focus { outline: none; border-color: var(--accent); }
 
 .palette { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
 .group { display: flex; flex-direction: column; gap: 4px; }
-.groupLabel {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #6b7280;
-}
+.groupLabel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-faint); }
 .keys { display: flex; flex-wrap: wrap; gap: 5px; }
 .key {
   min-width: 34px;
   height: 32px;
   padding: 0 8px;
-  border-radius: 7px;
-  border: 1px solid #2c2f36;
-  background: #24262c;
-  color: #e6e6e6;
+  border-radius: 5px;
+  border: 1px solid var(--line-2);
+  background: var(--panel-hi);
+  color: var(--fg);
   font-size: 15px;
   cursor: pointer;
 }
-.key:hover { background: #2f323a; border-color: #3b82f6; }
+.key:hover { border-color: var(--accent); }
 
 .examples {
   display: flex;
@@ -96,31 +85,25 @@
   align-items: center;
   gap: 6px;
   padding-top: 6px;
-  border-top: 1px solid #2c2f36;
+  border-top: 1px solid var(--line);
   margin-bottom: 14px;
 }
 .example {
   font-size: 12px;
   padding: 5px 10px;
-  border-radius: 14px;
-  border: 1px solid #2c2f36;
-  background: #24262c;
-  color: #cbd5e1;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--panel-hi);
+  color: var(--fg-dim);
   cursor: pointer;
 }
-.example:hover { background: #2f323a; }
+.example:hover { color: var(--fg); border-color: var(--fg-faint); }
 
 .foot { display: flex; justify-content: space-between; align-items: center; }
-.tip { font-size: 12px; color: #6b7280; }
+.tip { font-size: 11px; color: var(--fg-faint); }
 .footBtns { display: flex; gap: 8px; }
-.cancel, .ok {
-  font-size: 13px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  border: 1px solid #2c2f36;
-}
-.cancel { background: #24262c; color: #e6e6e6; }
-.cancel:hover { background: #2f323a; }
-.ok { background: #3b82f6; color: #fff; border-color: #3b82f6; }
-.ok:hover { background: #2f6fd8; }
+.cancel, .ok { font-size: 13px; padding: 8px 16px; border-radius: var(--radius); cursor: pointer; border: 1px solid var(--line-2); }
+.cancel { background: var(--panel-hi); color: var(--fg); }
+.cancel:hover { border-color: var(--fg-faint); }
+.ok { background: var(--accent); color: #14100a; border-color: var(--accent); font-weight: 600; }
+.ok:hover { background: var(--accent-hi); }

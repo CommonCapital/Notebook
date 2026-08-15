@@ -10,7 +10,7 @@
   flex: 1;
   min-height: 0;
   position: relative;
-  background: #0f1114;
+  background: var(--ink);
   overflow: hidden;
 }
 
@@ -19,12 +19,13 @@
   top: 14px;
   left: 50%;
   transform: translateX(-50%);
-  background: #1b1d22;
-  border: 1px solid #2c2f36;
-  color: #e6e6e6;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  color: var(--fg);
   padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 13px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  border-radius: var(--radius);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
   z-index: 20;
 }

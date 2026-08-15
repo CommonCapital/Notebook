@@ -1,11 +1,11 @@
 using System.Text.Json;
-using DrawingDesk.Api.Data;
-using DrawingDesk.Api.Dtos;
-using DrawingDesk.Api.Models;
+using Notebook.Api.Data;
+using Notebook.Api.Dtos;
+using Notebook.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace DrawingDesk.Api.Controllers;
+namespace Notebook.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -13,6 +13,46 @@ public class FilesController : ControllerBase
 {
     private readonly AppDbContext _db;
     public FilesController(AppDbContext db) => _db = db;
+
+    private static readonly JsonSerializerOptions SceneOpts = new(JsonSerializerDefaults.Web);
+    private static readonly string[] BackgroundStyles = ["blank", "grid", "lines", "dots"];
+
+    // Confirms an incoming scene matches the SceneDto contract before persisting.
+    // Known element types are validated against their typed record; unknown/newer
+    // types are tolerated (id + type only) so a new frontend element never breaks
+    // saving. The raw JSON is stored verbatim, so nothing is dropped.
+    private static bool TryValidateScene(JsonElement scene, out string? error)
+    {
+        error = null;
+        if (scene.ValueKind != JsonValueKind.Object)
+        { error = "scene must be a JSON object"; return false; }
+
+        if (scene.TryGetProperty("backgroundStyle", out var bg) && bg.ValueKind == JsonValueKind.String
+            && !BackgroundStyles.Contains(bg.GetString()))
+        { error = $"unknown backgroundStyle '{bg.GetString()}'"; return false; }
+
+        if (!scene.TryGetProperty("elements", out var els) || els.ValueKind != JsonValueKind.Array)
+        { error = "scene.elements must be an array"; return false; }
+
+        int i = 0;
+        foreach (var el in els.EnumerateArray())
+        {
+            if (el.ValueKind != JsonValueKind.Object)
+            { error = $"elements[{i}] must be an object"; return false; }
+            if (!el.TryGetProperty("id", out var id) || id.ValueKind != JsonValueKind.String || string.IsNullOrEmpty(id.GetString()))
+            { error = $"elements[{i}] needs a non-empty id"; return false; }
+            if (!el.TryGetProperty("type", out var ty) || ty.ValueKind != JsonValueKind.String || string.IsNullOrEmpty(ty.GetString()))
+            { error = $"elements[{i}] needs a type"; return false; }
+
+            if (SceneElementDto.Registry.TryGetValue(ty.GetString()!, out var clr))
+            {
+                try { el.Deserialize(clr, SceneOpts); }
+                catch (JsonException ex) { error = $"elements[{i}] ({ty.GetString()}): {ex.Message}"; return false; }
+            }
+            i++;
+        }
+        return true;
+    }
 
     // GET /api/files            -> all files
     // GET /api/files?folderId=3 -> files in one folder (folderId=0 or null == root)
@@ -79,7 +119,11 @@ public class FilesController : ControllerBase
             file.BackgroundColor = dto.BackgroundColor;
 
         if (dto.Scene is JsonElement scene && scene.ValueKind != JsonValueKind.Undefined)
+        {
+            if (!TryValidateScene(scene, out var err))
+                return BadRequest($"Invalid scene: {err}");
             file.SceneJson = scene.GetRawText();
+        }
 
         file.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();

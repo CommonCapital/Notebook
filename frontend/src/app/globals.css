@@ -1,3 +1,26 @@
+:root {
+  /* Warm graphite chrome + a single restrained ochre accent — drafting-table,
+     not dashboard. Deliberately avoids the usual bright-blue / violet palette. */
+  --ink: #131417;
+  --panel: #191b1e;
+  --panel-hi: #212328;
+  --line: #282b30;
+  --line-2: #33373d;
+
+  --fg: #e7e4dd;
+  --fg-dim: #9a9da4;
+  --fg-faint: #676b71;
+
+  --accent: #b98a46;      /* ochre / drafting pencil */
+  --accent-hi: #cda05a;
+  --accent-weak: rgba(185, 138, 70, 0.15);
+  --danger: #b1533f;
+
+  --radius: 6px;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, "Cascadia Code", monospace;
+  --sans: ui-sans-serif, -apple-system, "Segoe UI", Inter, Roboto, sans-serif;
+}
+
 html {
   height: 100%;
 }
@@ -7,9 +30,10 @@ body {
   height: 100%;
   max-width: 100vw;
   overflow: hidden;
-  background: #0f1114;
-  color: #e6e6e6;
-  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  background: var(--ink);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -23,4 +47,8 @@ body {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+::selection {
+  background: var(--accent-weak);
 }

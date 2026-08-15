@@ -98,8 +98,8 @@ export default function Home() {
         ) : (
           <div className={styles.placeholder}>
             <div>
-              <h1>Drawing Desk</h1>
-              <p>Figma for engineers &amp; STEM students — diagrams, blueprints, and LaTeX math.</p>
+              <h1>Notebook</h1>
+              <p>An engineer&apos;s notebook — diagrams, blueprints, function graphs, and LaTeX math on one canvas.</p>
               <p style={{ marginTop: 6, fontSize: 13, opacity: 0.7 }}>
                 Select a file on the left, or create a new one to start.
               </p>

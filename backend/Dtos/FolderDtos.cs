@@ -1,4 +1,4 @@
-namespace DrawingDesk.Api.Dtos;
+namespace Notebook.Api.Dtos;
 
 public record FolderDto(
     int Id,

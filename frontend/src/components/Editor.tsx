@@ -20,9 +20,13 @@ import {
 } from "@/lib/files";
 import { newId } from "@/lib/id";
 import { renderMath } from "@/lib/math";
+import { stencilDataUrl, type Stencil } from "@/lib/stencils";
+import type { Template } from "@/lib/templates";
 import type {
+  BackgroundStyle,
   ChartElement,
   FileDetail,
+  GraphElement,
   MathElement,
   Scene,
   SceneElement,
@@ -30,7 +34,10 @@ import type {
 } from "@/lib/types";
 import ChartModal, { type ChartConfig } from "./ChartModal";
 import type { Tool } from "./DrawingCanvas";
+import GraphModal, { type GraphConfig } from "./GraphModal";
+import InsertPicker from "./InsertPicker";
 import MathModal from "./MathModal";
+import SelectionPanel from "./SelectionPanel";
 import TableModal, { type TableConfig } from "./TableModal";
 import Toolbar, { type ExportFormat } from "./Toolbar";
 import styles from "./Editor.module.css";
@@ -55,10 +62,17 @@ const DEFAULT_CHART: ChartConfig = {
   chartType: "bar", title: "Chart",
   data: [{ label: "A", value: 4 }, { label: "B", value: 7 }, { label: "C", value: 3 }],
 };
+const DEFAULT_GRAPH: GraphConfig = {
+  funcs: [{ expr: "sin(x)", color: "#3d5a80" }],
+  xMin: -6.28, xMax: 6.28, yMin: -2, yMax: 2,
+};
 
 export default function Editor({ file, onSaved }: Props) {
-  const [scene, setScene] = useState<Scene>(file.scene);
+  const [scene, setScene] = useState<Scene>({ elements: file.scene.elements });
   const [background, setBackground] = useState(file.backgroundColor);
+  // Paper style is independent state (NOT part of the scene/undo flow), so
+  // deleting or editing elements can never reset it.
+  const [backgroundStyle, setBackgroundStyle] = useState<BackgroundStyle>(file.scene.backgroundStyle ?? "blank");
   const [tool, setTool] = useState<Tool>("pen");
   const [color, setColor] = useState("#111111");
   const [fill, setFill] = useState<string>("transparent");
@@ -67,28 +81,33 @@ export default function Editor({ file, onSaved }: Props) {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [busy, setBusy] = useState<string | null>(null);
 
+  const [snap, setSnap] = useState(false);
+  const [insertOpen, setInsertOpen] = useState(false);
   const [mathEditor, setMathEditor] = useState<(Placement & { latex: string; color: string }) | null>(null);
   const [tableEditor, setTableEditor] = useState<(Placement & { initial: TableConfig }) | null>(null);
   const [chartEditor, setChartEditor] = useState<(Placement & { initial: ChartConfig }) | null>(null);
+  const [graphEditor, setGraphEditor] = useState<(Placement & { initial: GraphConfig }) | null>(null);
 
   const stageRef = useRef<Konva.Stage>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latest = useRef({ scene, background });
-  latest.current = { scene, background };
+  const latest = useRef({ scene, background, backgroundStyle });
+  latest.current = { scene, background, backgroundStyle };
 
   // Undo/redo history of scenes.
   const history = useRef<Scene[]>([file.scene]);
   const histIndex = useRef(0);
 
   useEffect(() => {
-    setScene(file.scene);
+    const initial = { elements: file.scene.elements };
+    setScene(initial);
     setBackground(file.backgroundColor);
+    setBackgroundStyle(file.scene.backgroundStyle ?? "blank");
     setSelectedId(null);
     setSaveState("idle");
     setMathEditor(null);
     setTableEditor(null);
     setChartEditor(null);
-    history.current = [file.scene];
+    history.current = [initial];
     histIndex.current = 0;
   }, [file.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -98,7 +117,7 @@ export default function Editor({ file, onSaved }: Props) {
     saveTimer.current = setTimeout(async () => {
       try {
         await api.updateFile(file.id, {
-          scene: latest.current.scene,
+          scene: { elements: latest.current.scene.elements, backgroundStyle: latest.current.backgroundStyle },
           backgroundColor: latest.current.background,
         });
         setSaveState("saved");
@@ -139,6 +158,19 @@ export default function Editor({ file, onSaved }: Props) {
     setBackground(c);
     queueSave();
   };
+
+  const changeBackgroundStyle = (s: BackgroundStyle) => {
+    setBackgroundStyle(s);
+    queueSave();
+  };
+
+  // Update the currently-selected element in place (used by the size panel).
+  const updateSelected = useCallback((patch: Partial<SceneElement>) => {
+    if (!selectedId) return;
+    applyScene({ elements: scene.elements.map((e) => (e.id === selectedId ? ({ ...e, ...patch } as SceneElement) : e)) });
+  }, [selectedId, scene, applyScene]);
+
+  const selectedElement = selectedId ? scene.elements.find((e) => e.id === selectedId) ?? null : null;
 
   const deleteSelected = useCallback(() => {
     if (!selectedId) return;
@@ -218,6 +250,38 @@ export default function Editor({ file, onSaved }: Props) {
     }
   };
 
+  // --- Graph (function plot) ---
+  const requestGraph = (x: number, y: number) => setGraphEditor({ x, y, editingId: null, initial: DEFAULT_GRAPH });
+  const editGraph = (id: string) => {
+    const el = scene.elements.find((e) => e.id === id);
+    if (el?.type === "graph")
+      setGraphEditor({ x: el.x, y: el.y, editingId: id, initial: { funcs: el.funcs, xMin: el.xMin, xMax: el.xMax, yMin: el.yMin, yMax: el.yMax } });
+  };
+  const saveGraph = (cfg: GraphConfig) => {
+    const ed = graphEditor;
+    if (!ed) return;
+    setGraphEditor(null);
+    if (ed.editingId) {
+      applyScene({ elements: scene.elements.map((e) =>
+        e.id === ed.editingId ? { ...(e as GraphElement), ...cfg } : e) });
+      setSelectedId(ed.editingId);
+    } else {
+      addElement({ id: newId(), type: "graph", x: ed.x, y: ed.y, width: 460, height: 300, ...cfg });
+    }
+  };
+
+  // --- Insert stencils / templates ---
+  const insertStencil = (s: Stencil) => {
+    setInsertOpen(false);
+    addElement({ id: newId(), type: "image", x: 120, y: 120, width: s.w, height: s.h, src: stencilDataUrl(s) });
+  };
+  const insertTemplate = (t: Template) => {
+    setInsertOpen(false);
+    applyScene({ elements: [...scene.elements, ...t.build()] });
+    setTool("select");
+    setSelectedId(null);
+  };
+
   // Keyboard: delete + undo/redo.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -287,14 +351,14 @@ export default function Editor({ file, onSaved }: Props) {
     const name = f.name.toLowerCase();
     if (f.type === "application/pdf" || name.endsWith(".pdf")) return importPdf(f);
     if (f.type.startsWith("image/")) return importImage(f);
-    if (name.endsWith(".json") || name.endsWith(".drawdesk")) return importScene(f);
-    alert("Unsupported file. Import a PNG/JPG, a PDF, or a .drawdesk/.json scene.");
+    if (name.endsWith(".json") || name.endsWith(".notebook") || name.endsWith(".drawdesk")) return importScene(f);
+    alert("Unsupported file. Import a PNG/JPG, a PDF, or a .notebook/.json scene.");
   };
 
   // --- Export ---
   const runExport = async (fmt: ExportFormat) => {
     if (fmt === "json") {
-      downloadText(JSON.stringify(scene, null, 2), `${file.name}.drawdesk`);
+      downloadText(JSON.stringify(scene, null, 2), `${file.name}.notebook`);
       return;
     }
     setSelectedId(null); // hide transformer handles
@@ -322,6 +386,9 @@ export default function Editor({ file, onSaved }: Props) {
         fill={fill} onFill={setFill}
         strokeWidth={strokeWidth} onStrokeWidth={setStrokeWidth}
         background={background} onBackground={changeBackground}
+        backgroundStyle={backgroundStyle} onBackgroundStyle={changeBackgroundStyle}
+        snap={snap} onSnap={setSnap}
+        onOpenInsert={() => setInsertOpen(true)}
         hasSelection={!!selectedId} onDelete={deleteSelected}
         canUndo={histIndex.current > 0}
         canRedo={histIndex.current < history.current.length - 1}
@@ -334,19 +401,23 @@ export default function Editor({ file, onSaved }: Props) {
         <DrawingCanvas
           scene={scene}
           backgroundColor={background}
+          backgroundStyle={backgroundStyle}
           tool={tool}
           color={color}
           fill={fill}
           strokeWidth={strokeWidth}
+          snap={snap}
           selectedId={selectedId}
           onSelect={setSelectedId}
           onChange={applyScene}
           onRequestMath={requestMath} onEditMath={editMath}
           onRequestTable={requestTable} onEditTable={editTable}
           onRequestChart={requestChart} onEditChart={editChart}
+          onRequestGraph={requestGraph} onEditGraph={editGraph}
           stageRef={stageRef}
         />
         {busy && <div className={styles.busy}>{busy}</div>}
+        {selectedElement && <SelectionPanel el={selectedElement} onUpdate={updateSelected} />}
       </div>
 
       {mathEditor && (
@@ -360,6 +431,14 @@ export default function Editor({ file, onSaved }: Props) {
       {chartEditor && (
         <ChartModal initial={chartEditor.initial}
           onSave={saveChart} onCancel={() => setChartEditor(null)} />
+      )}
+      {graphEditor && (
+        <GraphModal initial={graphEditor.initial}
+          onSave={saveGraph} onCancel={() => setGraphEditor(null)} />
+      )}
+      {insertOpen && (
+        <InsertPicker onInsertStencil={insertStencil} onInsertTemplate={insertTemplate}
+          onClose={() => setInsertOpen(false)} />
       )}
     </div>
   );

@@ -57,7 +57,7 @@ export function exportHtml(stage: Konva.Stage, name: string) {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${escapeHtml(name)} — Drawing Desk</title>
+<title>${escapeHtml(name)} — Notebook</title>
 <style>
   body { margin: 0; background: #0f1114; display: flex; min-height: 100vh;
     align-items: center; justify-content: center; }

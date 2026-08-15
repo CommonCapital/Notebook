@@ -1,79 +1,99 @@
-# 🎨 Drawing Desk
+# Notebook
 
-**Figma for engineers and STEM students.** A local-first, single-user drawing +
-file-management app: sketch system architectures, project blueprints, abstract
-concepts — and drop in **beautiful LaTeX math formulas** right alongside your
-diagrams. Every file is a canvas; everything is autosaved to a local database as
-you work.
+**An engineer's notebook — a drafting table for STEM.**
+Sketch system architectures and blueprints, annotate PDFs, plot functions, and
+drop in publication-quality **LaTeX math, physics, and chemistry** right next to
+your diagrams. Local-first and open source: every file is an infinite canvas that
+autosaves to a database on your own machine.
+
+![License: MIT](https://img.shields.io/badge/license-MIT-blue) · .NET 10 · Next.js 16 · SQLite
+
+> **Status:** working prototype. Single-user, local-first, no accounts.
+> See [CONTRIBUTING.md](CONTRIBUTING.md) for the roadmap (graphing calculator,
+> 2D chemistry structures, auto-layout figures, C++ physics simulations).
+
+---
+
+## Highlights
+
+- **Infinite canvas** — scroll/pan (two-finger scroll, the Pan tool, or hold
+  **Space**) and zoom (**Ctrl/⌘ + scroll** or pinch, plus the on-canvas zoom HUD).
+- **Notebook paper** — blank, **grid**, **ruled lines**, or **dots**, in any paper colour.
+- **Draw** — pen, eraser, line, arrow, rectangle, ellipse, diamond, triangle, text.
+  Everything is movable and freely resizable (including text size).
+- **LaTeX math / physics / chemistry** — a live-preview editor with a symbol
+  palette. Handles `E = mc^2`, matrices, `G:\mathbb{R}^n\to[0,1]`, and — via
+  mhchem — nuclear and chemical equations like
+  `\ce{^{6}_{3}Li + ^{1}_{0}n -> ^{3}_{1}H + ^{4}_{2}He}`.
+- **Function grapher** — a Desmos-style tool: plot one or more `y = f(x)` with a
+  live preview and adjustable range (its own dependency-free expression engine).
+- **Tables & charts** — structured data, edited in a dialog, rendered as crisp
+  vector graphics. Charts: bar, line, area, scatter, pie.
+- **Stencils & templates** — drag-in system-architecture / circuit / blueprint
+  symbols, and one-click starter diagrams (system architecture, neural network,
+  blueprint sheet).
+- **Snap-to-grid** and a **selection panel** to resize/restyle any placed object.
+- **Files & folders** — a collapsible tree; drag a file onto a folder to move it.
+- **Undo / redo**, and debounced **autosave** to SQLite.
+- **Import** PNG/JPG, **PDF** (each page becomes an annotatable image), and
+  `.notebook` scenes. **Export** PNG, JPG, PDF, HTML, PowerPoint (`.pptx`), or
+  the raw scene — everything on the canvas exports together.
+
+Word/Excel export is intentionally omitted — a freeform canvas doesn't map onto
+their document models. Use PDF, PPTX, or an image instead.
 
 ## Stack
 
 | Layer     | Tech                                              |
 |-----------|---------------------------------------------------|
 | Backend   | ASP.NET Core Web API (.NET 10) + EF Core          |
-| Database  | **SQLite** — one file (`backend/drawingdesk.db`)  |
+| Database  | **SQLite** — one file (`backend/notebook.db`)     |
 | Frontend  | Next.js (App Router, TypeScript)                  |
 | Canvas    | **Konva** / react-konva (vector scene graph)      |
-| Math      | **MathJax** (LaTeX → SVG), rendered on the canvas |
+| Math      | **MathJax** (LaTeX → SVG) with the `mhchem` package |
+| Export    | jsPDF, pptxgenjs, pdf.js (all lazy-loaded)        |
 
-### Why SQLite + a JSON scene
+## Quick start
 
-- The app is single-user and local, so SQLite (zero-setup, one file) beats a
-  networked database. Swap the EF Core provider to Postgres later if you ever host it.
-- Each canvas is stored as a **vector scene** — a JSON list of elements
-  (`stroke`, `line`, `rect`, `ellipse`, `text`, `image`) — in one `SceneJson`
-  column. Every element stays re-editable, saves are tiny diffs (not a rasterized
-  image), and PNG export just renders the scene to a canvas. Adding a new drawing
-  tool never requires a database migration.
+Prerequisites: **.NET 10 SDK** and **Node 18+**. Two terminals:
 
-## Running it (two terminals)
-
-**Backend** (http://localhost:5199):
+**Backend** — http://localhost:5199 (the SQLite file is created on first run):
 
 ```bash
 cd backend && ASPNETCORE_URLS="http://localhost:5199" dotnet run
 ```
 
-**Frontend** (http://localhost:3000):
+**Frontend** — http://localhost:3000:
 
 ```bash
-cd frontend && npm run dev
+cd frontend && cp .env.example .env.local && npm install && npm run dev
 ```
 
-Then open http://localhost:3000. The API URL is set in `frontend/.env.local`.
+Then open http://localhost:3000. `NEXT_PUBLIC_API_URL` (in `.env.local`) points
+the frontend at the API; the API allows CORS from `localhost:3000`.
 
-## Features
+## Architecture
 
-- **Files & folders**: create files and nested folders, rename (double-click),
-  delete, and **drag a file onto a folder** to move it. Collapsible tree.
-- **Canvas**: pen, straight line, arrow, rectangle, ellipse, diamond, triangle,
-  text, image import.
-- **Undo / redo**: full scene history (`⌘/Ctrl+Z`, `⌘/Ctrl+Shift+Z`).
-- **Tables**: a grid element with an editor (rows/cols steppers, header row,
-  per-cell text) rendered to crisp SVG on the canvas; double-click to edit.
-- **Charts**: bar / line / pie from editable data, rendered to SVG; double-click to edit.
-- **Math (LaTeX)**: the ∑ tool opens an editor with a live preview and a
-  one-click symbol palette (∑ ∫ √ fractions, Greek, relations, …). Formulas are
-  rendered to **crisp SVG via MathJax** and placed as real, resizable, re-editable
-  canvas objects (double-click to edit). Great for physics/math notes and
-  annotated engineering diagrams.
-- **Style**: pen color, fill (solid/none), stroke size, any background color.
-- **Select tool**: click to select, drag to move, resize via handles, `Delete` to remove.
-- **Autosave**: debounced (~600 ms) `PUT` to the API after any change.
-- **Import**: PNG/JPG images, **PDF** (each page rendered onto the canvas to
-  annotate), and `.drawdesk` scene files — via one Import button.
-- **Export**: **PNG, JPG, PDF, HTML, PowerPoint (.pptx)**, and `.drawdesk` scene.
-  (Word/Excel are intentionally unsupported — a freeform canvas doesn't map to
-  their document models; use PDF/PPTX/image instead.) Everything on the canvas —
-  drawings, imported pages, math, tables, charts — exports together.
+Each canvas is a **vector scene** — a JSON document of typed elements
+(`stroke`, `arrow`, `rect`, `math`, `table`, `chart`, …) plus a paper style —
+stored in one `SceneJson` column. This keeps elements re-editable, makes saves
+tiny diffs, and lets any export just render the scene.
 
-### How math rendering works
+- **Frontend** is the source of truth for element shapes (`src/lib/types.ts`).
+  Adding a drawing capability is usually a new element `type` + a renderer — no
+  database migration.
+- **Backend** models the same schema as typed DTOs (`Dtos/SceneDto.cs`) and
+  **validates** each known element on save, while **tolerating unknown/newer
+  types** (kept intact via JSON extension data) so the frontend can evolve
+  without breaking the API. The raw JSON is stored verbatim, so nothing is ever
+  dropped on round-trip.
 
-LaTeX → **MathJax SVG** (glyph paths inlined, `fontCache: "none"`) → embedded as a
-vector image on the Konva canvas. This keeps formulas sharp at any size, exports
-with everything else in PNG, and stays re-editable — the scene stores only the
-LaTeX source (`math` element), so the backend never changes. MathJax is loaded
-lazily on the client with a curated TeX package set (no runtime autoloader).
+```
+backend/    ASP.NET Core API — Models/, Data/, Dtos/, Controllers/
+frontend/   Next.js
+  src/components/  Editor, DrawingCanvas, Toolbar, Sidebar, *Modal
+  src/lib/         types, api, math (MathJax), generate (SVG), exporters
+```
 
 ## API
 
@@ -82,16 +102,19 @@ lazily on the client with a curated TeX package set (no runtime autoloader).
 | GET    | `/api/files`              | List files (metadata only)       |
 | GET    | `/api/files/{id}`         | Open a file (includes scene)     |
 | POST   | `/api/files`              | Create a file                    |
-| PUT    | `/api/files/{id}`         | Autosave (name/background/scene) |
+| PUT    | `/api/files/{id}`         | Autosave (name / background / scene) |
 | PATCH  | `/api/files/{id}/move`    | Move to a folder / to root       |
 | DELETE | `/api/files/{id}`         | Delete a file                    |
-| ...    | `/api/folders`            | Folder CRUD                      |
+| CRUD   | `/api/folders`            | Folder create / rename / delete  |
 
-## Layout
+## Contributing
 
-```
-backend/    ASP.NET Core API — Models/, Data/, Dtos/, Controllers/
-frontend/   Next.js — src/components (Editor, DrawingCanvas, Toolbar, Sidebar),
-            src/lib (api, types, files, id)
-```
-# -Drawing-Desk
+Contributions are very welcome — especially features real STEM workflows need.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md): it has the tiered roadmap, the
+"how to add an element type" walkthrough, and a list of unmet needs by field
+(CS, EE, ME, physics, chemistry, math, bio). Before a PR, make sure
+`cd frontend && npm run build` and `cd backend && dotnet build` both pass.
+
+## License
+
+[MIT](LICENSE) © Nursan Omarov and Notebook contributors.

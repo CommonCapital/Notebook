@@ -1,4 +1,4 @@
-namespace DrawingDesk.Api.Models;
+namespace Notebook.Api.Models;
 
 /// <summary>
 /// A single drawing document. The canvas itself lives in <see cref="SceneJson"/>

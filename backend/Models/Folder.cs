@@ -1,4 +1,4 @@
-namespace DrawingDesk.Api.Models;
+namespace Notebook.Api.Models;
 
 /// <summary>
 /// A folder in the file tree. Folders can nest via <see cref="ParentFolderId"/>.
