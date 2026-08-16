@@ -68,6 +68,11 @@ export default function SelectionPanel({
     <div className={styles.panel}>
       <span className={styles.type}>{el.type}</span>
       {controls}
+      <label className={styles.field} key="rotation">
+        <span>Angle°</span>
+        <input type="number" value={Math.round(el.rotation ?? 0)}
+          onChange={(e) => upd({ rotation: Number(e.target.value) })} />
+      </label>
     </div>
   );
 }

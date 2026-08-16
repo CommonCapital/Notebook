@@ -20,6 +20,7 @@ export type ElementType =
 export interface BaseElement {
   id: string;
   type: ElementType;
+  rotation?: number; // degrees, clockwise; optional (defaults to 0)
 }
 
 export interface StrokeElement extends BaseElement {

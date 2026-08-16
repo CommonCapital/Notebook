@@ -55,7 +55,18 @@ interface Props {
   onEditChart: (id: string) => void;
   onRequestGraph: (x: number, y: number) => void;
   onEditGraph: (id: string) => void;
+  onRequestText: (x: number, y: number) => void;
+  onEditText: (id: string) => void;
+  onDrawComplete: () => void;
   stageRef: React.RefObject<Konva.Stage | null>;
+}
+
+// Average of flat [x0,y0,x1,y1,...] point pairs.
+function centroid(pts: number[]): { x: number; y: number } {
+  let sx = 0, sy = 0;
+  const n = Math.max(1, pts.length / 2);
+  for (let i = 0; i < pts.length; i += 2) { sx += pts[i]; sy += pts[i + 1]; }
+  return { x: sx / n, y: sy / n };
 }
 
 function useHtmlImage(src: string) {
@@ -74,7 +85,10 @@ function ImageShape({
 }: { el: Extract<SceneElement, { type: "image" }> } & Record<string, unknown>) {
   const img = useHtmlImage(el.src);
   return (
-    <KonvaImage image={img ?? undefined} x={el.x} y={el.y} width={el.width} height={el.height} {...rest} />
+    <KonvaImage {...rest} image={img ?? undefined}
+      x={el.x + el.width / 2} y={el.y + el.height / 2}
+      offsetX={el.width / 2} offsetY={el.height / 2}
+      width={el.width} height={el.height} rotation={el.rotation ?? 0} />
   );
 }
 
@@ -99,7 +113,7 @@ export default function DrawingCanvas(props: Props) {
     scene, backgroundColor, backgroundStyle, tool, color, fill, strokeWidth, snap,
     selectedId, onSelect, onChange, onRequestMath, onEditMath,
     onRequestTable, onEditTable, onRequestChart, onEditChart,
-    onRequestGraph, onEditGraph, stageRef,
+    onRequestGraph, onEditGraph, onRequestText, onEditText, onDrawComplete, stageRef,
   } = props;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -221,15 +235,7 @@ export default function DrawingCanvas(props: Props) {
     if (tool === "table") return onRequestTable(x, y);
     if (tool === "chart") return onRequestChart(x, y);
     if (tool === "graph") return onRequestGraph(x, y);
-    if (tool === "text") {
-      const text = window.prompt("Text:");
-      if (text) {
-        const el: SceneElement = { id: newId(), type: "text", x, y, text, fontSize: 24, fill: color };
-        commit([...scene.elements, el]);
-        onSelect(el.id);
-      }
-      return;
-    }
+    if (tool === "text") return onRequestText(x, y);
 
     drawing.current = true;
     if (tool === "pen") setDraft({ id: newId(), type: "stroke", points: [x, y], color, width: strokeWidth });
@@ -279,7 +285,7 @@ export default function DrawingCanvas(props: Props) {
           };
         }
         commit([...scene.elements, el]);
-        if (tool !== "pen") onSelect(el.id);
+        if (tool !== "pen") { onSelect(el.id); onDrawComplete(); }
       }
       setDraft(null);
     }
@@ -294,10 +300,14 @@ export default function DrawingCanvas(props: Props) {
 
   const handleDragEnd = (el: SceneElement, node: Konva.Node) => {
     if (POINT_TYPES.has(el.type)) {
-      const dx = snapV(node.x()), dy = snapV(node.y());
-      const pts = (el as { points: number[] }).points.map((v, i) => (i % 2 === 0 ? v + dx : v + dy));
-      node.position({ x: 0, y: 0 });
+      const src = (el as { points: number[] }).points;
+      const c = centroid(src);
+      const dx = snapV(node.x() - c.x), dy = snapV(node.y() - c.y);
+      const pts = src.map((v, i) => (i % 2 === 0 ? v + dx : v + dy));
       updateElement(el.id, { points: pts } as Partial<SceneElement>);
+    } else if ("width" in el && "height" in el) {
+      // rendered with a centre offset, so node position is the centre
+      updateElement(el.id, { x: snapV(node.x() - el.width / 2), y: snapV(node.y() - el.height / 2) } as Partial<SceneElement>);
     } else {
       updateElement(el.id, { x: snapV(node.x()), y: snapV(node.y()) } as Partial<SceneElement>);
     }
@@ -305,24 +315,36 @@ export default function DrawingCanvas(props: Props) {
 
   const handleTransformEnd = (el: SceneElement, node: Konva.Node) => {
     const sx = node.scaleX(), sy = node.scaleY();
-    node.scaleX(1); node.scaleY(1);
+    const r = node.rotation();
     if (POINT_TYPES.has(el.type)) {
-      const ox = node.x(), oy = node.y();
-      node.position({ x: 0, y: 0 });
-      const pts = (el as { points: number[] }).points.map((v, i) => (i % 2 === 0 ? ox + v * sx : oy + v * sy));
-      updateElement(el.id, { points: pts } as Partial<SceneElement>);
-    } else if (el.type === "ellipse") {
-      updateElement(el.id, { x: node.x(), y: node.y(), radiusX: Math.max(3, el.radiusX * sx), radiusY: Math.max(3, el.radiusY * sy) } as Partial<SceneElement>);
+      // Bake the full transform (rotation + scale + translate) into the points.
+      const t = node.getTransform();
+      const src = (el as { points: number[] }).points;
+      const pts: number[] = [];
+      for (let i = 0; i < src.length; i += 2) { const p = t.point({ x: src[i], y: src[i + 1] }); pts.push(p.x, p.y); }
+      node.rotation(0); node.scaleX(1); node.scaleY(1); node.offsetX(0); node.offsetY(0); node.position({ x: 0, y: 0 });
+      updateElement(el.id, { points: pts, rotation: 0 } as Partial<SceneElement>);
+      return;
+    }
+    node.scaleX(1); node.scaleY(1);
+    if (el.type === "ellipse") {
+      updateElement(el.id, { x: node.x(), y: node.y(), rotation: r, radiusX: Math.max(3, el.radiusX * sx), radiusY: Math.max(3, el.radiusY * sy) } as Partial<SceneElement>);
     } else if (el.type === "text") {
-      updateElement(el.id, { x: node.x(), y: node.y(), fontSize: Math.max(6, el.fontSize * ((sx + sy) / 2)) } as Partial<SceneElement>);
+      updateElement(el.id, { x: node.x(), y: node.y(), rotation: r, fontSize: Math.max(6, el.fontSize * ((sx + sy) / 2)) } as Partial<SceneElement>);
     } else if ("width" in el && "height" in el) {
-      updateElement(el.id, { x: node.x(), y: node.y(), width: Math.max(5, el.width * sx), height: Math.max(5, el.height * sy) } as Partial<SceneElement>);
+      const w = Math.max(5, el.width * sx), h = Math.max(5, el.height * sy);
+      // node position is the centre (offset = half-size); convert back to top-left.
+      updateElement(el.id, { x: node.x() - w / 2, y: node.y() - h / 2, width: w, height: h, rotation: r } as Partial<SceneElement>);
     }
   };
 
   const renderEl = (el: SceneElement) => {
     const selectable = tool === "select";
-    const editById = el.type === "math" ? onEditMath : el.type === "table" ? onEditTable : el.type === "chart" ? onEditChart : el.type === "graph" ? onEditGraph : null;
+    const editById =
+      el.type === "math" ? onEditMath : el.type === "table" ? onEditTable
+      : el.type === "chart" ? onEditChart : el.type === "graph" ? onEditGraph
+      : el.type === "text" ? onEditText : null;
+    const rot = el.rotation ?? 0;
     const common = {
       name: el.id, // used by the eraser hit-test
       ref: (n: Konva.Node | null) => { if (n) nodeRefs.current.set(el.id, n); else nodeRefs.current.delete(el.id); },
@@ -334,33 +356,47 @@ export default function DrawingCanvas(props: Props) {
       onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => handleDragEnd(el, e.target),
       onTransformEnd: (e: Konva.KonvaEventObject<Event>) => handleTransformEnd(el, e.target),
     };
+    // Box elements rotate around their centre (offset = half-size); point-based
+    // rotate around the points' centroid.
+    const box = "width" in el && "height" in el
+      ? { x: el.x + el.width / 2, y: el.y + el.height / 2, offsetX: el.width / 2, offsetY: el.height / 2, rotation: rot }
+      : null;
 
     switch (el.type) {
-      case "stroke":
-        return <Line key={el.id} {...common} points={el.points} stroke={el.color} strokeWidth={el.width} lineCap="round" lineJoin="round" tension={0.4} />;
-      case "line":
-        return <Line key={el.id} {...common} points={el.points} stroke={el.color} strokeWidth={el.width} lineCap="round" />;
-      case "arrow":
-        return <Arrow key={el.id} {...common} points={el.points} stroke={el.color} fill={el.color} strokeWidth={el.width} pointerLength={10 + el.width} pointerWidth={8 + el.width} />;
+      case "stroke": {
+        const c = centroid(el.points);
+        return <Line key={el.id} {...common} points={el.points} x={c.x} y={c.y} offsetX={c.x} offsetY={c.y} rotation={rot}
+          stroke={el.color} strokeWidth={el.width} hitStrokeWidth={Math.max(14, el.width)} lineCap="round" lineJoin="round" tension={0.4} />;
+      }
+      case "line": {
+        const c = centroid(el.points);
+        return <Line key={el.id} {...common} points={el.points} x={c.x} y={c.y} offsetX={c.x} offsetY={c.y} rotation={rot}
+          stroke={el.color} strokeWidth={el.width} hitStrokeWidth={Math.max(14, el.width)} lineCap="round" />;
+      }
+      case "arrow": {
+        const c = centroid(el.points);
+        return <Arrow key={el.id} {...common} points={el.points} x={c.x} y={c.y} offsetX={c.x} offsetY={c.y} rotation={rot}
+          stroke={el.color} fill={el.color} strokeWidth={el.width} hitStrokeWidth={Math.max(14, el.width)} pointerLength={10 + el.width} pointerWidth={8 + el.width} />;
+      }
       case "rect":
-        return <Rect key={el.id} {...common} x={el.x} y={el.y} width={el.width} height={el.height} stroke={el.stroke} fill={el.fill} strokeWidth={el.strokeWidth} />;
+        return <Rect key={el.id} {...common} {...box!} width={el.width} height={el.height} stroke={el.stroke} fill={el.fill} strokeWidth={el.strokeWidth} />;
       case "ellipse":
-        return <Ellipse key={el.id} {...common} x={el.x} y={el.y} radiusX={el.radiusX} radiusY={el.radiusY} stroke={el.stroke} fill={el.fill} strokeWidth={el.strokeWidth} />;
+        return <Ellipse key={el.id} {...common} x={el.x} y={el.y} rotation={rot} radiusX={el.radiusX} radiusY={el.radiusY} stroke={el.stroke} fill={el.fill} strokeWidth={el.strokeWidth} />;
       case "diamond":
       case "triangle":
-        return <Line key={el.id} {...common} x={el.x} y={el.y} points={polyPoints(el.type, el.width, el.height)} closed stroke={el.stroke} fill={el.fill} strokeWidth={el.strokeWidth} />;
+        return <Line key={el.id} {...common} {...box!} points={polyPoints(el.type, el.width, el.height)} closed stroke={el.stroke} fill={el.fill} strokeWidth={el.strokeWidth} />;
       case "text":
-        return <Text key={el.id} {...common} x={el.x} y={el.y} text={el.text} fontSize={el.fontSize} fill={el.fill} />;
+        return <Text key={el.id} {...common} x={el.x} y={el.y} rotation={rot} text={el.text} fontSize={el.fontSize} fill={el.fill} />;
       case "image":
         return <ImageShape key={el.id} el={el} {...common} />;
       case "math":
         return <MathShape key={el.id} el={el} {...common} />;
       case "table":
-        return <SvgImageShape key={el.id} svg={tableToSvg(el)} x={el.x} y={el.y} width={el.width} height={el.height} {...common} />;
+        return <SvgImageShape key={el.id} svg={tableToSvg(el)} x={el.x} y={el.y} width={el.width} height={el.height} rotation={rot} {...common} />;
       case "chart":
-        return <SvgImageShape key={el.id} svg={chartToSvg(el)} x={el.x} y={el.y} width={el.width} height={el.height} {...common} />;
+        return <SvgImageShape key={el.id} svg={chartToSvg(el)} x={el.x} y={el.y} width={el.width} height={el.height} rotation={rot} {...common} />;
       case "graph":
-        return <SvgImageShape key={el.id} svg={graphToSvg(el)} x={el.x} y={el.y} width={el.width} height={el.height} {...common} />;
+        return <SvgImageShape key={el.id} svg={graphToSvg(el)} x={el.x} y={el.y} width={el.width} height={el.height} rotation={rot} {...common} />;
     }
   };
 
@@ -417,7 +453,9 @@ export default function DrawingCanvas(props: Props) {
           {draft && renderEl(draft)}
           <Transformer
             ref={transformerRef}
-            rotateEnabled={false}
+            rotateEnabled
+            rotationSnaps={[0, 45, 90, 135, 180, 225, 270, 315]}
+            rotationSnapTolerance={6}
             ignoreStroke
             anchorSize={7}
             borderStroke="#b98a46"

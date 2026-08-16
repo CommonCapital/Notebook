@@ -25,6 +25,7 @@ public class SceneElementDto
 {
     [JsonPropertyName("id")] public string Id { get; set; } = "";
     [JsonPropertyName("type")] public string Type { get; set; } = "";
+    [JsonPropertyName("rotation")] public double? Rotation { get; set; }
 
     // Any property not modelled on the concrete record lands here, so the typed
     // records never drop fields and stay forward-compatible.

@@ -270,6 +270,19 @@ export default function Editor({ file, onSaved }: Props) {
     }
   };
 
+  // --- Text ---
+  const requestText = (x: number, y: number) => {
+    const text = window.prompt("Text:");
+    if (text) addElement({ id: newId(), type: "text", x, y, text, fontSize: 24, fill: color });
+    // addElement switches to the select tool, so the next click won't re-prompt.
+  };
+  const editText = (id: string) => {
+    const el = scene.elements.find((e) => e.id === id);
+    if (el?.type !== "text") return;
+    const text = window.prompt("Edit text:", el.text);
+    if (text !== null) applyScene({ elements: scene.elements.map((e) => (e.id === id ? { ...el, text } : e)) });
+  };
+
   // --- Insert stencils / templates ---
   const insertStencil = (s: Stencil) => {
     setInsertOpen(false);
@@ -414,6 +427,8 @@ export default function Editor({ file, onSaved }: Props) {
           onRequestTable={requestTable} onEditTable={editTable}
           onRequestChart={requestChart} onEditChart={editChart}
           onRequestGraph={requestGraph} onEditGraph={editGraph}
+          onRequestText={requestText} onEditText={editText}
+          onDrawComplete={() => setTool("select")}
           stageRef={stageRef}
         />
         {busy && <div className={styles.busy}>{busy}</div>}

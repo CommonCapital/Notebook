@@ -12,6 +12,7 @@ export default function SvgImageShape({
   y,
   width,
   height,
+  rotation = 0,
   ...rest
 }: {
   svg: string;
@@ -19,6 +20,7 @@ export default function SvgImageShape({
   y: number;
   width: number;
   height: number;
+  rotation?: number;
 } & Record<string, unknown>) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
 
@@ -32,8 +34,11 @@ export default function SvgImageShape({
     <KonvaImage
       {...(rest as Konva.ImageConfig)}
       image={img ?? undefined}
-      x={x}
-      y={y}
+      x={x + width / 2}
+      y={y + height / 2}
+      offsetX={width / 2}
+      offsetY={height / 2}
+      rotation={rotation}
       width={width}
       height={height}
     />

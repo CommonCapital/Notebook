@@ -28,29 +28,21 @@ export default function MathShape({
     };
   }, [el.latex, el.color]);
 
+  // Rotate around the element's centre (offset = half-size).
+  const xform = {
+    x: el.x + el.width / 2,
+    y: el.y + el.height / 2,
+    offsetX: el.width / 2,
+    offsetY: el.height / 2,
+    width: el.width,
+    height: el.height,
+    rotation: el.rotation ?? 0,
+  };
+
   if (!img) {
     // Placeholder box while the formula renders (or if it failed to parse).
-    return (
-      <Rect
-        {...(rest as Konva.RectConfig)}
-        x={el.x}
-        y={el.y}
-        width={el.width}
-        height={el.height}
-        stroke="#3b82f6"
-        dash={[4, 4]}
-      />
-    );
+    return <Rect {...(rest as Konva.RectConfig)} {...xform} stroke="#b98a46" dash={[4, 4]} />;
   }
 
-  return (
-    <KonvaImage
-      {...(rest as Konva.ImageConfig)}
-      image={img}
-      x={el.x}
-      y={el.y}
-      width={el.width}
-      height={el.height}
-    />
-  );
+  return <KonvaImage {...(rest as Konva.ImageConfig)} image={img} {...xform} />;
 }
