@@ -1,5 +1,7 @@
 # Notebook
 
+![Notebook](frontend/public/NoteBook.png)
+
 **An engineer's notebook — a drafting table for STEM.**
 Sketch system architectures and blueprints, annotate PDFs, plot functions, and
 drop in publication-quality **LaTeX math, physics, and chemistry** right next to
