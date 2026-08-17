@@ -150,6 +150,7 @@ export interface GraphElement extends BaseElement {
   xMax: number;
   yMin: number;
   yMax: number;
+  autoY?: boolean; // auto-fit the y-scale to the data (default true)
 }
 
 export type SceneElement =

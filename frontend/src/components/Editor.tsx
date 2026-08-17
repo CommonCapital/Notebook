@@ -64,7 +64,7 @@ const DEFAULT_CHART: ChartConfig = {
 };
 const DEFAULT_GRAPH: GraphConfig = {
   funcs: [{ expr: "sin(x)", color: "#3d5a80" }],
-  xMin: -6.28, xMax: 6.28, yMin: -2, yMax: 2,
+  xMin: -10, xMax: 10, yMin: -5, yMax: 5, autoY: true,
 };
 
 export default function Editor({ file, onSaved }: Props) {
@@ -255,7 +255,7 @@ export default function Editor({ file, onSaved }: Props) {
   const editGraph = (id: string) => {
     const el = scene.elements.find((e) => e.id === id);
     if (el?.type === "graph")
-      setGraphEditor({ x: el.x, y: el.y, editingId: id, initial: { funcs: el.funcs, xMin: el.xMin, xMax: el.xMax, yMin: el.yMin, yMax: el.yMax } });
+      setGraphEditor({ x: el.x, y: el.y, editingId: id, initial: { funcs: el.funcs, xMin: el.xMin, xMax: el.xMax, yMin: el.yMin, yMax: el.yMax, autoY: el.autoY ?? true } });
   };
   const saveGraph = (cfg: GraphConfig) => {
     const ed = graphEditor;

@@ -6,9 +6,21 @@ import { svgToDataUrl } from "@/lib/generate";
 import type { GraphElement } from "@/lib/types";
 import styles from "./EditorModals.module.css";
 
-export type GraphConfig = Pick<GraphElement, "funcs" | "xMin" | "xMax" | "yMin" | "yMax">;
+export type GraphConfig = Pick<GraphElement, "funcs" | "xMin" | "xMax" | "yMin" | "yMax" | "autoY">;
 
 const CURVE_COLORS = ["#3d5a80", "#b5654d", "#6b8f71", "#7d6b8f", "#b98a46"];
+
+// One-click syntax snippets. `$` marks where the caret lands.
+const SNIPPETS: { label: string; insert: string }[] = [
+  { label: "π", insert: "pi" },
+  { label: "√", insert: "sqrt($)" },
+  { label: "|x|", insert: "|$|" },
+  { label: "xⁿ", insert: "^($)" },
+  { label: "a⁄b", insert: "\\frac{$}{}" },
+  { label: "eˣ", insert: "e^($)" },
+  { label: "d/dx", insert: "deriv($)" },
+  { label: "∫", insert: "int($, 0)" },
+];
 
 export default function GraphModal({
   initial,
@@ -20,9 +32,9 @@ export default function GraphModal({
   onCancel: () => void;
 }) {
   const [funcs, setFuncs] = useState(initial.funcs);
-  // Ranges are kept as raw strings so you can type a leading "-" and long
-  // negatives (e.g. -1000000, or -1e6) without a controlled number input
-  // wiping the minus mid-keystroke.
+  const [active, setActive] = useState(0); // which function row the palette edits
+  const [autoY, setAutoY] = useState(initial.autoY ?? true);
+  // Ranges are raw strings so you can type a leading "-" / long negatives freely.
   const [xMinS, setXMinS] = useState(String(initial.xMin));
   const [xMaxS, setXMaxS] = useState(String(initial.xMax));
   const [yMinS, setYMinS] = useState(String(initial.yMin));
@@ -37,18 +49,25 @@ export default function GraphModal({
   });
 
   const preview = useMemo(() => {
-    const el = { type: "graph", id: "p", x: 0, y: 0, width: 460, height: 240, funcs, xMin, xMax, yMin, yMax } as GraphElement;
+    const el = { type: "graph", id: "p", x: 0, y: 0, width: 480, height: 240, funcs, xMin, xMax, yMin, yMax, autoY } as GraphElement;
     return svgToDataUrl(graphToSvg(el));
-  }, [funcs, xMin, xMax, yMin, yMax]);
+  }, [funcs, xMin, xMax, yMin, yMax, autoY]);
 
   const setExpr = (i: number, expr: string) => setFuncs((p) => p.map((f, idx) => (idx === i ? { ...f, expr } : f)));
   const addFunc = () => setFuncs((p) => [...p, { expr: "", color: CURVE_COLORS[p.length % CURVE_COLORS.length] }]);
-  const removeFunc = (i: number) => setFuncs((p) => (p.length > 1 ? p.filter((_, idx) => idx !== i) : p));
+  const removeFunc = (i: number) => {
+    setFuncs((p) => (p.length > 1 ? p.filter((_, idx) => idx !== i) : p));
+    setActive(0);
+  };
+  const insertSnippet = (snip: string) => {
+    const clean = snip.replace("$", "");
+    setFuncs((p) => p.map((f, idx) => (idx === active ? { ...f, expr: f.expr + clean } : f)));
+  };
 
-  const num = (label: string, value: string, set: (v: string) => void) => (
-    <label className={styles.label} style={{ display: "flex", gap: 5, alignItems: "center" }}>
+  const num = (label: string, value: string, set: (v: string) => void, disabled = false) => (
+    <label className={styles.label} style={{ display: "flex", gap: 5, alignItems: "center", opacity: disabled ? 0.4 : 1 }}>
       {label}
-      <input className={styles.num} type="text" inputMode="text" value={value}
+      <input className={styles.num} type="text" value={value} disabled={disabled}
         onChange={(e) => set(e.target.value)} />
     </label>
   );
@@ -69,7 +88,8 @@ export default function GraphModal({
           <div key={i} className={styles.dataRow}>
             <span style={{ color: f.color, fontSize: 18 }}>■</span>
             <input className={`${styles.text} ${styles.textFull}`} value={f.expr}
-              placeholder="e.g.  sin(x) + 0.5*x   ·  use * for multiply, ^ for powers"
+              placeholder="e.g.  \frac{\sin(x)}{x}   ·   |x|   ·   sqrt(x^2+1)   ·   deriv(x^3)"
+              onFocus={() => setActive(i)}
               onChange={(e) => setExpr(i, e.target.value)}
               style={errors[i] ? { borderColor: "var(--danger)" } : undefined} />
             <button className={styles.del} title="Remove" onClick={() => removeFunc(i)}>×</button>
@@ -77,19 +97,36 @@ export default function GraphModal({
         ))}
         <button className={styles.addRow} onClick={addFunc}>+ Add function</button>
 
-        <div className={styles.row} style={{ marginTop: 12 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, margin: "10px 0" }}>
+          {SNIPPETS.map((s) => (
+            <button key={s.label} className={styles.key} title={s.insert} onClick={() => insertSnippet(s.insert)}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        <div className={styles.row} style={{ marginTop: 4 }}>
           {num("x min", xMinS, setXMinS)}
           {num("x max", xMaxS, setXMaxS)}
-          {num("y min", yMinS, setYMinS)}
-          {num("y max", yMaxS, setYMaxS)}
+          {num("y min", yMinS, setYMinS, autoY)}
+          {num("y max", yMaxS, setYMaxS, autoY)}
+          <label className={styles.label} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <input type="checkbox" checked={autoY} onChange={(e) => setAutoY(e.target.checked)} />
+            Auto-fit Y
+          </label>
         </div>
 
         <div className={styles.foot}>
-          <button className={styles.cancel} onClick={onCancel}>Cancel</button>
-          <button className={styles.ok}
-            onClick={() => onSave({ funcs: funcs.filter((f) => f.expr.trim()), xMin, xMax, yMin, yMax })}>
-            Insert
-          </button>
+          <span className={styles.tip} style={{ marginRight: "auto" }}>
+            Accepts LaTeX-style input · use <code>*</code> or just <code>2x</code> · plots numerically
+          </span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className={styles.cancel} onClick={onCancel}>Cancel</button>
+            <button className={styles.ok}
+              onClick={() => onSave({ funcs: funcs.filter((f) => f.expr.trim()), xMin, xMax, yMin, yMax, autoY })}>
+              Insert
+            </button>
+          </div>
         </div>
       </div>
     </div>
