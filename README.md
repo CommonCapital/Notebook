@@ -11,8 +11,9 @@ autosaves to a database on your own machine.
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue) · .NET 10 · Next.js 16 · SQLite
 
 > **Status:** working prototype. Single-user, local-first, no accounts.
-> See [CONTRIBUTING.md](CONTRIBUTING.md) for the roadmap (graphing calculator,
-> 2D chemistry structures, auto-layout figures, C++ physics simulations).
+> See [CONTRIBUTING.md](CONTRIBUTING.md) for the roadmap (executable Jupyter-style
+> kernels, smart connectors, 2D chemistry structures, auto-layout figures, and
+> C++ physics simulations).
 
 ---
 

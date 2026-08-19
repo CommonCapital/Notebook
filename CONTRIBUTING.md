@@ -111,6 +111,44 @@ Proposed architecture:
 If you want to start Tier 3, open a design issue first so we agree on the
 `SimulationSpec` shape and the service contract before code.
 
+### Tier 3 — Executable notebook cells (Jupyter-style kernels)
+
+Turn Notebook into a real *computational* notebook: **runnable code cells right
+on the canvas**, next to the diagrams and math. Write an algorithm, import
+libraries, train an ML model, or drive a physics simulation — and pipe the output
+(a plot, a table, an array) straight back onto the canvas as an element.
+
+Planned surface:
+- A **`code` element** storing `{ language, source, kernelId, outputs[] }` — small,
+  syncs/saves like any other element. Outputs (text, a matplotlib PNG, a table)
+  are cached so a reopened file shows results without re-running.
+- A **"Select kernel"** control in the cell header. Target languages:
+  **Python** (ML — numpy / pandas / scikit-learn / PyTorch), **C++**
+  (algorithms & simulation), and **C**.
+- **Run / Run-all**, streaming stdout and rich outputs live into the cell.
+- **Output → canvas**: a produced figure becomes an `image`/`chart` element; a
+  DataFrame becomes a `table`; a curve can hand off to the function grapher.
+
+Two execution paths (ship the first, grow into the second):
+1. **In-browser, zero-infra (start here).** Run entirely client-side via WASM:
+   **Pyodide** for Python (CPython + numpy/pandas/scikit-learn/matplotlib compiled
+   to WebAssembly), and a WASM C/C++ toolchain for compile-and-run. No server, no
+   accounts, safe by construction. Limits: package subset, no real threads/GPU,
+   memory-bound — fine for teaching, small models, and algorithm demos.
+2. **Sandboxed backend kernels (full power).** A **kernel-gateway** service running
+   real Jupyter kernels — `ipykernel` (Python), `xeus-cling` (C++), a C REPL —
+   each inside a locked-down **container sandbox** (Docker/gVisor, CPU/mem/time
+   limits, no host FS or network by default), streaming results to the client over
+   WebSocket. This is what unlocks GPU training, large simulations, and `pip`/`apt`
+   installs. It shares infrastructure with the Tier-3 C++ simulation services above.
+
+**Security is the hard part, not the UI:** running user code is arbitrary code
+execution. Never execute untrusted code outside a sandbox; enforce resource and
+wall-clock limits; keep it network-isolated unless the user explicitly opts in.
+
+Because of that, this is a **design-first** feature — open an RFC covering the
+`code` element schema, the kernel protocol, and the sandbox model before building.
+
 ---
 
 ## How to add a new element type (the contract)
