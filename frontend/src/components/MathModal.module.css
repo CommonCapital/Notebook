@@ -62,6 +62,34 @@
 }
 .input:focus { outline: none; border-color: var(--accent); }
 
+.calc {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -4px 0 12px;
+  padding: 8px 12px;
+  background: var(--accent-weak);
+  border: 1px solid rgba(185, 138, 70, 0.4);
+  border-radius: var(--radius);
+}
+.calcResult {
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--accent-hi);
+  font-weight: 600;
+}
+.calcInsert {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: 1px solid var(--line-2);
+  background: var(--panel-hi);
+  color: var(--fg-dim);
+  cursor: pointer;
+}
+.calcInsert:hover { color: var(--fg); border-color: var(--accent); }
+
 .palette { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
 .group { display: flex; flex-direction: column; gap: 4px; }
 .groupLabel { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-faint); }

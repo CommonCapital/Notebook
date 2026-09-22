@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MATH_EXAMPLES, MATH_PALETTE, renderMath } from "@/lib/math";
+import { evaluateConst } from "@/lib/plot";
 import styles from "./MathModal.module.css";
+
+// Trim floating-point dust to a clean calculator-style number.
+function fmtNum(v: number): string {
+  if (Number.isInteger(v)) return String(v);
+  return String(Number(v.toPrecision(7)));
+}
 
 interface Props {
   initialLatex: string;
@@ -65,6 +72,10 @@ export default function MathModal({ initialLatex, color, onSave, onCancel }: Pro
     else onCancel();
   };
 
+  // Auto-calculator: if the expression is a constant, evaluate it live.
+  const result = evaluateConst(latex);
+  const appendResult = () => setLatex((l) => l.trimEnd() + " = " + fmtNum(result!));
+
   return (
     <div className={styles.backdrop} onMouseDown={onCancel}>
       <div className={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
@@ -95,6 +106,13 @@ export default function MathModal({ initialLatex, color, onSave, onCancel }: Pro
             if (e.key === "Escape") onCancel();
           }}
         />
+
+        {result !== null && (
+          <div className={styles.calc}>
+            <span className={styles.calcResult}>= {fmtNum(result)}</span>
+            <button className={styles.calcInsert} onClick={appendResult}>append “= {fmtNum(result)}”</button>
+          </div>
+        )}
 
         <div className={styles.palette}>
           {MATH_PALETTE.map((grp) => (

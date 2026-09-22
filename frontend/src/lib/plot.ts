@@ -13,8 +13,11 @@ const FUNCS: Record<string, (n: number) => number> = {
   sin: Math.sin, cos: Math.cos, tan: Math.tan,
   asin: Math.asin, acos: Math.acos, atan: Math.atan,
   arcsin: Math.asin, arccos: Math.acos, arctan: Math.atan,
+  acot: (n) => Math.atan2(1, n), arccot: (n) => Math.atan2(1, n),
+  asec: (n) => Math.acos(1 / n), arcsec: (n) => Math.acos(1 / n),
+  acsc: (n) => Math.asin(1 / n), arccsc: (n) => Math.asin(1 / n), arccosec: (n) => Math.asin(1 / n),
   sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
-  sec: (n) => 1 / Math.cos(n), csc: (n) => 1 / Math.sin(n), cot: (n) => 1 / Math.tan(n),
+  sec: (n) => 1 / Math.cos(n), csc: (n) => 1 / Math.sin(n), cosec: (n) => 1 / Math.sin(n), cot: (n) => 1 / Math.tan(n),
   exp: Math.exp, sqrt: Math.sqrt, cbrt: Math.cbrt, abs: Math.abs, sign: Math.sign,
   floor: Math.floor, ceil: Math.ceil, round: Math.round,
   ln: Math.log, log: Math.log10, lg: Math.log10, log10: Math.log10, log2: Math.log2,
@@ -73,11 +76,47 @@ function convertCmd(s: string, cmd: string, build: (a: string, b?: string) => st
   return out;
 }
 
+// Read a bound after `_` or `^`: a {group} or a single token (number/letter, opt. sign).
+function readBound(s: string, pos: number, marker: string): { content: string; end: number } | null {
+  while (pos < s.length && /\s/.test(s[pos])) pos++;
+  if (s[pos] !== marker) return null;
+  pos++;
+  while (pos < s.length && /\s/.test(s[pos])) pos++;
+  if (s[pos] === "{") return readGroup(s, pos, "{", "}");
+  const j = pos;
+  if (s[pos] === "-") pos++;
+  while (pos < s.length && /[0-9a-zA-Z.\\]/.test(s[pos])) pos++;
+  return pos > j ? { content: s.slice(j, pos), end: pos } : null;
+}
+
+// Definite integral \int_{a}^{b} EXPR dx → int(EXPR, a, b) (a constant we can evaluate).
+function convertIntegral(s: string): string {
+  let out = s, guard = 0;
+  while (guard++ < 30) {
+    const i = out.indexOf("\\int");
+    if (i < 0) break;
+    const lower = readBound(out, i + 4, "_");
+    const upper = lower ? readBound(out, lower.end, "^") : null;
+    if (!lower || !upper) break;
+    const rest = out.slice(upper.end);
+    const m = /\s+d\s*[a-zA-Z]/.exec(rest); // the ' dx' differential
+    if (!m) break;
+    const integrand = rest.slice(0, m.index).trim() || "1";
+    out = out.slice(0, i) + `int(${integrand},${lower.content},${upper.content})` + rest.slice(m.index + m[0].length);
+  }
+  return out;
+}
+
 // LaTeX / unicode → plain infix that the parser understands.
 export function normalize(src: string): string {
   let s = src;
+  s = s.replace(/\\[,;:!> ]/g, " ").replace(/\\q?quad/g, " "); // LaTeX spacing → space
   s = s.replace(/[−–—]/g, "-").replace(/×/g, "*").replace(/·/g, "*").replace(/÷/g, "/")
     .replace(/√/g, "sqrt").replace(/π/g, "pi").replace(/τ/g, "tau").replace(/φ/g, "phi").replace(/∞/g, "Infinity");
+  // degrees → radians: 30°, 30^\circ, 30^{\circ}
+  s = s.replace(/\^\s*\{?\s*\\circ\s*\}?/g, "*(pi/180)").replace(/°/g, "*(pi/180)");
+  // definite integral \int_{a}^{b} EXPR dx → int(EXPR, a, b)
+  s = convertIntegral(s);
   // derivative shorthands — before \frac handling
   s = s.replace(/\\frac\s*\{\s*d\s*\}\s*\{\s*d[a-zA-Z]?\s*\}/g, "deriv").replace(/\bd\s*\/\s*d[a-zA-Z]/g, "deriv");
   s = s.replace(/\\left/g, "").replace(/\\right/g, "");
@@ -166,8 +205,14 @@ export function compile(src: string): Fn {
         const args = [parseExpr()];
         while (peek() === ",") { i++; args.push(parseExpr()); }
         if (peek() === ")") i++; else throw new Error("missing ')'");
-        if (name === "deriv" || name === "derivative") { const g = args[0]; return (x) => (g(x + DH) - g(x - DH)) / (2 * DH); }
-        if (name === "int" || name === "integral") { const g = args[0], lo = args[1]; return (x) => integrate(g, lo ? lo(x) : 0, x); }
+        if (name === "deriv" || name === "derivative") {
+          const g = args[0], at = args[1]; // deriv(f) → f'(x); deriv(f, a) → f'(a) (a number)
+          return at ? (x) => (g(at(x) + DH) - g(at(x) - DH)) / (2 * DH) : (x) => (g(x + DH) - g(x - DH)) / (2 * DH);
+        }
+        if (name === "int" || name === "integral") {
+          const g = args[0], lo = args[1], hi = args[2]; // int(f,a) → ∫ₐˣ; int(f,a,b) → ∫ₐᵇ (a number)
+          return hi ? (x) => integrate(g, lo(x), hi(x)) : (x) => integrate(g, lo ? lo(x) : 0, x);
+        }
         const fn = FUNCS[name];
         if (fn) { const g = args[0]; return (x) => fn(g(x)); }
         throw new Error(`unknown function '${name}'`);
@@ -180,6 +225,25 @@ export function compile(src: string): Fn {
   const f = parseExpr();
   if (i < s.length) throw new Error(`unexpected '${s.slice(i)}'`);
   return f;
+}
+
+/**
+ * Evaluate a CONSTANT LaTeX/math expression to a number (the auto-calculator).
+ * Returns null if it doesn't parse, isn't finite, or depends on a free variable
+ * `x` (i.e. it's a function, not a value). Handles arithmetic, ^, roots, \frac,
+ * trig + inverse trig, degrees, and definite integrals / derivatives-at-a-point.
+ */
+export function evaluateConst(src: string): number | null {
+  if (!src.trim()) return null;
+  let f: Fn;
+  try { f = compile(src); } catch { return null; }
+  try {
+    const v = f(0);
+    if (!Number.isFinite(v)) return null;
+    // must not depend on x — sample a few points and require agreement
+    if (Math.abs(f(0.7) - v) > 1e-7 || Math.abs(f(1.93) - v) > 1e-7) return null;
+    return v;
+  } catch { return null; }
 }
 
 // Auto-fit a y-range to the functions over [xMin,xMax], using robust percentiles

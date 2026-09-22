@@ -168,6 +168,8 @@ export const MATH_EXAMPLES: { label: string; latex: string }[] = [
   { label: "Quadratic", latex: "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}" },
   { label: "Relativity", latex: "E = mc^2 \\qquad E^2 = (pc)^2 + (mc^2)^2" },
   { label: "Uncertainty", latex: "x = (5.0 \\pm 0.2)\\,\\text{m}" },
+  { label: "Calculate", latex: "\\sqrt{144} + 2^{5} - \\frac{10}{4}" },
+  { label: "Integral", latex: "\\int_{0}^{\\pi} \\sin(x)\\, dx" },
   { label: "Heisenberg", latex: "\\Delta x \\, \\Delta p \\ge \\frac{\\hbar}{2}" },
   { label: "Nuclear", latex: "\\ce{^{6}_{3}Li + ^{1}_{0}n -> ^{3}_{1}H + ^{4}_{2}He} + 4.8\\,\\text{MeV}" },
   { label: "Chemistry", latex: "\\ce{2H2 + O2 -> 2H2O}" },
