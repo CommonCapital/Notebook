@@ -28,6 +28,12 @@ const CONSTS: Record<string, number> = {
 };
 
 const DH = 1e-4; // step for the numeric derivative
+const DEG = Math.PI / 180;
+// Trig whose argument is an angle (converted from degrees in degree mode) and
+// inverse trig whose result is an angle (converted to degrees in degree mode).
+const ANGLE_IN = new Set(["sin", "cos", "tan", "cot", "sec", "csc", "cosec"]);
+const ANGLE_OUT = new Set(["asin", "acos", "atan", "arcsin", "arccos", "arctan",
+  "acot", "arccot", "asec", "arcsec", "acsc", "arccsc", "arccosec"]);
 
 // Numeric definite integral ∫[a..b] g via Simpson's rule.
 function integrate(g: Fn, a: number, b: number): number {
@@ -108,13 +114,15 @@ function convertIntegral(s: string): string {
 }
 
 // LaTeX / unicode → plain infix that the parser understands.
-export function normalize(src: string): string {
+export function normalize(src: string, degrees = false): string {
   let s = src;
   s = s.replace(/\\[,;:!> ]/g, " ").replace(/\\q?quad/g, " "); // LaTeX spacing → space
   s = s.replace(/[−–—]/g, "-").replace(/×/g, "*").replace(/·/g, "*").replace(/÷/g, "/")
     .replace(/√/g, "sqrt").replace(/π/g, "pi").replace(/τ/g, "tau").replace(/φ/g, "phi").replace(/∞/g, "Infinity");
-  // degrees → radians: 30°, 30^\circ, 30^{\circ}
-  s = s.replace(/\^\s*\{?\s*\\circ\s*\}?/g, "*(pi/180)").replace(/°/g, "*(pi/180)");
+  // The degree marker (30°, 30^\circ). In degree mode angles are already degrees,
+  // so it's a no-op; in radian mode it converts to radians.
+  const degRepl = degrees ? "" : "*(pi/180)";
+  s = s.replace(/\^\s*\{?\s*\\circ\s*\}?/g, degRepl).replace(/°/g, degRepl);
   // definite integral \int_{a}^{b} EXPR dx → int(EXPR, a, b)
   s = convertIntegral(s);
   // derivative shorthands — before \frac handling
@@ -130,8 +138,8 @@ export function normalize(src: string): string {
   return s;
 }
 
-export function compile(src: string): Fn {
-  const s = normalize(src).replace(/\s+/g, "");
+export function compile(src: string, degrees = false): Fn {
+  const s = normalize(src, degrees).replace(/\s+/g, "");
   let i = 0;
   const peek = () => s[i];
   const startsFactor = (c: string | undefined) => c !== undefined && /[0-9.a-zA-Z(]/.test(c);
@@ -214,7 +222,12 @@ export function compile(src: string): Fn {
           return hi ? (x) => integrate(g, lo(x), hi(x)) : (x) => integrate(g, lo ? lo(x) : 0, x);
         }
         const fn = FUNCS[name];
-        if (fn) { const g = args[0]; return (x) => fn(g(x)); }
+        if (fn) {
+          const g = args[0];
+          if (degrees && ANGLE_IN.has(name)) return (x) => fn(g(x) * DEG); // sin(30) = sin(30°)
+          if (degrees && ANGLE_OUT.has(name)) return (x) => fn(g(x)) / DEG; // arcsin(0.5) in degrees
+          return (x) => fn(g(x));
+        }
         throw new Error(`unknown function '${name}'`);
       }
       throw new Error(`unknown name '${name}'`);
@@ -233,10 +246,10 @@ export function compile(src: string): Fn {
  * `x` (i.e. it's a function, not a value). Handles arithmetic, ^, roots, \frac,
  * trig + inverse trig, degrees, and definite integrals / derivatives-at-a-point.
  */
-export function evaluateConst(src: string): number | null {
+export function evaluateConst(src: string, degrees = false): number | null {
   if (!src.trim()) return null;
   let f: Fn;
-  try { f = compile(src); } catch { return null; }
+  try { f = compile(src, degrees); } catch { return null; }
   try {
     const v = f(0);
     if (!Number.isFinite(v)) return null;

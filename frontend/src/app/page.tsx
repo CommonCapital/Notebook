@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Editor from "@/components/Editor";
+import PomodoroTimer from "@/components/PomodoroTimer";
 import Sidebar from "@/components/Sidebar";
 import { api } from "@/lib/api";
 import type { FileDetail, FileSummary, Folder } from "@/lib/types";
@@ -107,6 +108,7 @@ export default function Home() {
           </div>
         )}
       </main>
+      <PomodoroTimer />
     </div>
   );
 }

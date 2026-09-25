@@ -25,9 +25,17 @@ autosaves to a database on your own machine.
 - **Draw** — pen, eraser, line, arrow, rectangle, ellipse, diamond, triangle, text.
   Everything is movable and freely resizable (including text size).
 - **LaTeX math / physics / chemistry** — a live-preview editor with a symbol
-  palette. Handles `E = mc^2`, matrices, `G:\mathbb{R}^n\to[0,1]`, and — via
-  mhchem — nuclear and chemical equations like
-  `\ce{^{6}_{3}Li + ^{1}_{0}n -> ^{3}_{1}H + ^{4}_{2}He}`.
+  palette (Greek, relations, calculus, plus physics staples: uncertainty
+  `\pm`/`\mp`/`%`, `\delta`/`\Delta`, torque `\tau`, and degrees `°`). Handles
+  `E = mc^2`, matrices, `G:\mathbb{R}^n\to[0,1]`, and — via mhchem — nuclear and
+  chemical equations like `\ce{^{6}_{3}Li + ^{1}_{0}n -> ^{3}_{1}H + ^{4}_{2}He}`.
+- **Built-in calculator** — the math editor evaluates as you type. Constant
+  expressions collapse to a number (`\sqrt{144}+2^{5}-\frac{10}{4} = 41.5`,
+  definite integrals, trig with a **RAD/DEG** toggle), and **symbolic calculus**
+  returns a *formula*: derivatives (`\frac{d}{dx}(x^3) = 3x^2`) and indefinite
+  integrals (`\int x^2\,dx = \frac{x^3}{3}+C`). For implicit differentiation, any
+  extra symbol can be flipped from constant to a function of the variable, so the
+  chain rule emits `dy/dx` terms. One click appends the result to your formula.
 - **Function grapher** — a Desmos-style tool: plot one or more `y = f(x)` with a
   live preview and adjustable range (its own dependency-free expression engine).
 - **Tables & charts** — structured data, edited in a dialog, rendered as crisp
@@ -37,6 +45,8 @@ autosaves to a database on your own machine.
   blueprint sheet).
 - **Snap-to-grid** and a **selection panel** to resize/restyle any placed object.
 - **Files & folders** — a collapsible tree; drag a file onto a folder to move it.
+- **Pomodoro study timer** — a built-in focus/break timer (auto-cycling, gentle
+  chime, live countdown in the browser tab) to pace long study sessions.
 - **Undo / redo**, and debounced **autosave** to SQLite.
 - **Import** PNG/JPG, **PDF** (each page becomes an annotatable image), and
   `.notebook` scenes. **Export** PNG, JPG, PDF, HTML, PowerPoint (`.pptx`), or
@@ -95,7 +105,7 @@ tiny diffs, and lets any export just render the scene.
 backend/    ASP.NET Core API — Models/, Data/, Dtos/, Controllers/
 frontend/   Next.js
   src/components/  Editor, DrawingCanvas, Toolbar, Sidebar, *Modal
-  src/lib/         types, api, math (MathJax), generate (SVG), exporters
+  src/lib/         types, api, math (MathJax), plot + symbolic (calculator/CAS), generate (SVG), exporters
 ```
 
 ## API
