@@ -125,7 +125,9 @@ Planned surface:
 - A **"Select kernel"** control in the cell header. Target languages:
   **Python** (ML — numpy / pandas / scikit-learn / PyTorch), **C++**
   (algorithms & simulation), and **C**.
-- **Run / Run-all**, streaming stdout and rich outputs live into the cell.
+- **Run / Run-all**, streaming stdout and rich outputs live into the cell —
+  **compile-and-run C/C++** and run **Python with imported libraries**, working
+  like any other IDE (edit → run → see output), just embedded in the notebook.
 - **Output → canvas**: a produced figure becomes an `image`/`chart` element; a
   DataFrame becomes a `table`; a curve can hand off to the function grapher.
 
@@ -148,6 +150,28 @@ wall-clock limits; keep it network-isolated unless the user explicitly opts in.
 
 Because of that, this is a **design-first** feature — open an RFC covering the
 `code` element schema, the kernel protocol, and the sandbox model before building.
+
+### File types — canvas, Markdown, or notebook (`.ipynb`)
+
+Today every file is an infinite **canvas**. The next step is to let the user pick
+a file's *kind* when creating it:
+
+- **Canvas** — the current freeform vector scene (default).
+- **Markdown (`.md`)** — a linear prose/notes document with inline LaTeX and images.
+- **Notebook (`.ipynb`)** — the strongest option, and the natural home for the
+  runnable code cells above: an ordered list of Markdown + code cells with cached
+  outputs, interchangeable with Jupyter. Preferred over plain `.md` because it
+  carries executable cells and their results, not just text.
+
+Design notes:
+- Add a `kind: "canvas" | "markdown" | "notebook"` field to a file (alongside its
+  scene/content), chosen in the "New file" flow; the editor switches on `kind`.
+- A **notebook** maps cleanly onto the `code`-element work: `.ipynb` is already a
+  JSON cell list, so import/export can round-trip to real Jupyter files, and the
+  same kernel backend runs the cells.
+- Markdown and notebook editors are linear-document surfaces (not the Konva
+  canvas), so they're a new editor component, not a new element type — but they
+  reuse the same math renderer, file tree, autosave, and export plumbing.
 
 ---
 
